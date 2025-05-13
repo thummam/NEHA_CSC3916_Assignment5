@@ -306,6 +306,28 @@ router.get('/movies/:movieId', authJwtController.isAuthenticated, async (req, re
     });
   }
 });
+
+// Movie Search Route
+router.post('/movies/search', authJwtController.isAuthenticated, async (req, res) => {
+  const { query } = req.body;
+
+  if (!query || typeof query !== 'string') {
+    return res.status(400).json({ success: false, message: 'Search query is required and must be a string.' });
+  }
+
+  try {
+    const movies = await Movie.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { actors: { $elemMatch: { $regex: query, $options: 'i' } } }
+      ]
+    });
+
+    return res.status(200).json({ success: true, results: movies });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Search failed', error: err.message });
+  }
+});
   
 
 app.use('/', router);
